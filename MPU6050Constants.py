@@ -20,6 +20,7 @@ FIFO_EN  = 0x23
 USER_CTRL = 0x6A
 FIFO_R_W = 0x74
 FIFO_COUNT_H = 0x72
+I2C_MST_CTRL = 0x24
 
 # Gyro full range output options, maps to the byte values in GyroConfigSel
 GConfigVal = [250,500,1000,2000] # degrees/sec

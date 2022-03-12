@@ -14,15 +14,16 @@ from MPU6050Constants import *
 """
 class MPU6050:
     """Initializes the MPU6050 sensor using I2C
-        -sampleRate (Hz), Frequency sensors will be sampled at, options: 32, 64, 128, 256, 512, 1024  
+        -sampleRate (Hz), Frequency sensors will be sampled at, can't get exact rate,
+         due to the way the divider is calculated
         -gRange (degrees/s) desired output range for gyro scope signals
         -aRange (g (9.81 m/s^2)) desired output range for accel signals"""   
-    def __init__(self, sampleRate=32, gRange=250, aRange=2):
+    def __init__(self, sampleRate=25, gRange=250, aRange=2):
         self.bus = smbus.SMBus(1) # start comm with i2c bus
-        # Sample Rate Divider Register - divides the base sample rate 8192 so that the given
+        # Sample Rate Divider Register - divides the base sample rate 8000Hz so that the given
         # sampleRate is achieved, 
-        sampleRateDivier = (8192 / sampleRate) - 1
-        assert sampleRateDivier.is_integer() # Sample rate should evenly divide the base rate
+        assert sampleRate <= 1000
+        sampleRateDivier = (8000 / sampleRate) - 1
         self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(sampleRateDivier))
         time.sleep(0.1)
         # Power Management/Crystal Register
@@ -109,6 +110,16 @@ class MPU6050:
         gyroX = self.scaleGyro(self.readBuffer16())
         gyroY = self.scaleGyro(self.readBuffer16())
         gyroZ = self.scaleGyro(self.readBuffer16())
+        return accX, accY, accZ, gyroX, gyroY, gyroZ
+
+    def readBufferRaw(self):
+        accX = self.readBuffer16()
+        accY = self.readBuffer16()
+        accZ = self.readBuffer16()
+        
+        gyroX = self.readBuffer16()
+        gyroY = self.readBuffer16()
+        gyroZ = self.readBuffer16()
         return accX, accY, accZ, gyroX, gyroY, gyroZ
 
     # Checks to see if data is avaialbe in the buffer

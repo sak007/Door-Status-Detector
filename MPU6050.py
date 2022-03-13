@@ -28,6 +28,8 @@ class MPU6050:
         time.sleep(0.1)
         # Power Management/Crystal Register
         time.sleep(0.1)
+        self.bus.write_byte_data(MPU6050_ADDR, PWR_MGMT_1, 0x00)
+        time.sleep(0.1)
         self.bus.write_byte_data(MPU6050_ADDR, PWR_MGMT_1, 0x01)
         time.sleep(0.1)
         # Config register - FSYNC/Low Pass Filter - Disable w/ 0

@@ -42,6 +42,7 @@ class MPU6050Buffer(Thread):
     def runBuffer(self):
         self.sensor.clearBuffer()
         self.buffer.clear()
+        self.runningB = True
         while self.bufferEn:
             time.sleep(.05)
             if self.sensor.isDataAvailable(): # Check if there is data to read and for overflow
@@ -49,6 +50,7 @@ class MPU6050Buffer(Thread):
                 for i in range(numChunks): # Read and store the data
                     data = self.sensor.readBuffer()
                     self.buffer.append(data)
+        self.runningB = False
                     # print("data", data)
             # else:
             #     time.sleep(.005)
@@ -56,8 +58,10 @@ class MPU6050Buffer(Thread):
     def startBuffering(self):
         self.bufferEn = True
 
-    def stopBuffering(self):
+    def stopBuffering(self, block=False):
         self.bufferEn = False
+        while block:
+            time.sleep(.001)
 
     def bufferLen(self):
         return len(self.buffer)

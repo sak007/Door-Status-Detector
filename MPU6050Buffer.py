@@ -44,6 +44,8 @@ class MPU6050Buffer(Thread):
                     data = self.sensor.readBuffer()
                     self.buffer.append(data)
                     # print("data", data)
+            else:
+                time.sleep(.01)
 
     def startBuffering(self):
         self.bufferEn = True
@@ -66,7 +68,7 @@ class MPU6050Buffer(Thread):
 
 # Tests the buffer
 def main():
-    sensor = MPU6050(sampleRate=300)
+    sensor = MPU6050(sampleRate=25)
     buf = MPU6050Buffer(sensor)
     time.sleep(.05)
     assert buf.bufferLen() == 0 # Check to make sure buffering hasnt started
@@ -76,6 +78,13 @@ def main():
     assert buf.bufferLen() != 0 # Buffering started, should have some values
     # Let sample for 10 seconds and check the number of values recorded
     mytime = .05
+    while True:
+        a = time.time()
+        buflen = buf.bufferLen()
+        for i in range(buflen):
+            b = buf.read()
+            
+        print(time.time() - a, " to read ", buflen, " chunks")
     for i in range(3):
         time.sleep(10)
         mytime += 10

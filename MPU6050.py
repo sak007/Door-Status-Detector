@@ -24,6 +24,7 @@ class MPU6050:
         # sampleRate is achieved, 
         assert sampleRate <= 1000
         sampleRateDivier = (8000 / sampleRate) - 1
+        print("divider:", sampleRateDivier)
         self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(sampleRateDivier))
         time.sleep(0.1)
         # Power Management/Crystal Register

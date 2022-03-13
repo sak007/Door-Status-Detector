@@ -45,7 +45,7 @@ class MPU6050Buffer(Thread):
                     self.buffer.append(data)
                     # print("data", data)
             else:
-                time.sleep(.01)
+                time.sleep(.005)
 
     def startBuffering(self):
         self.bufferEn = True

@@ -17,31 +17,45 @@ def shiftAndInsert(arr, val):
 
 def main():
     sampleRate = 50
-    gRange = 250 # degrees/s
+    gRange = 500 # degrees/s
     aRange = 2 # gs
     # Start the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, gRange=gRange, aRange=aRange)
     buf = MPU6050Buffer.MPU6050Buffer(sensor)
-    timeToDisplay = 8
+    timeToDisplay = 10
     numPoints = sampleRate*timeToDisplay
+    print(numPoints)
     x = np.linspace(timeToDisplay, 0, num=numPoints) # Preallocate 100 size array
 
     # Accel Figure
-    fig1 = plt.figure(1)
-    ax1 = fig1.add_subplot(3, 1, 1)
+    fig1 = plt.figure(figsize=(10,5))
+    ax1 = fig1.add_subplot(3, 2, 1)
     plt.title("Accelerometers")
-    ax2 = fig1.add_subplot(3, 1, 2)
+    ax2 = fig1.add_subplot(3, 2, 3)
     plt.ylabel("g")
-    ax3 = fig1.add_subplot(3, 1, 3)
+    ax3 = fig1.add_subplot(3, 2, 5)
     plt.xlabel("Time since now (s)")
+    ax4 = fig1.add_subplot(3, 2, 2)
+    plt.title("Gyroscope")
+    ax5 = fig1.add_subplot(3, 2, 4)
+    plt.ylabel("degrees/s")
+    ax6 = fig1.add_subplot(3, 2, 6)
+    plt.xlabel("Time since now (s)")
+
     accelX = np.zeros(numPoints)
     accelY = np.zeros(numPoints)
     accelZ = np.zeros(numPoints)
+    gyroX = np.zeros(numPoints)
+    gyroY = np.zeros(numPoints)
+    gyroZ = np.zeros(numPoints)
 
     line1, = ax1.plot([], lw=3)
     line2, = ax2.plot([], lw=3)
     line3, = ax3.plot([], lw=3)
     text = ax1.text(timeToDisplay - .2, aRange*.65, "")
+    line4, = ax4.plot([], lw=3)
+    line5, = ax5.plot([], lw=3)
+    line6, = ax6.plot([], lw=3)
 
     # Set x and y axis limits
     ax1.set_xlim(x.max(), x.min())
@@ -50,31 +64,6 @@ def main():
     ax2.set_ylim([-1*aRange, aRange])
     ax3.set_xlim(x.max(), x.min())
     ax3.set_ylim([-1*aRange, aRange])
-
-    fig1.canvas.draw() # note that the first draw comes before setting data 
-
-    # Cache backgrounds
-    ax1background = fig1.canvas.copy_from_bbox(ax1.bbox)
-    ax2background = fig1.canvas.copy_from_bbox(ax2.bbox)
-    ax3background = fig1.canvas.copy_from_bbox(ax3.bbox)
-
-    # Gyro Figure
-    fig2 = plt.figure(2)
-    ax4 = fig2.add_subplot(3, 1, 1)
-    plt.title("Gyroscope")
-    ax5 = fig2.add_subplot(3, 1, 2)
-    plt.ylabel("degrees/s")
-    ax6 = fig2.add_subplot(3, 1, 3)
-    plt.xlabel("Time since now (s)")
-    gyroX = np.zeros(numPoints)
-    gyroY = np.zeros(numPoints)
-    gyroZ = np.zeros(numPoints)
-
-    line4, = ax4.plot([], lw=3)
-    line5, = ax5.plot([], lw=3)
-    line6, = ax6.plot([], lw=3)
-
-    # Set x and y axis limits
     ax4.set_xlim(x.max(), x.min())
     ax4.set_ylim([-1*gRange, gRange])
     ax5.set_xlim(x.max(), x.min())
@@ -82,12 +71,16 @@ def main():
     ax6.set_xlim(x.max(), x.min())
     ax6.set_ylim([-1*gRange, gRange])
 
-    fig2.canvas.draw()   # note that the first draw comes before setting data 
-
     # Cache backgrounds
-    ax4background = fig2.canvas.copy_from_bbox(ax4.bbox)
-    ax5background = fig2.canvas.copy_from_bbox(ax5.bbox)
-    ax6background = fig2.canvas.copy_from_bbox(ax6.bbox)
+    ax1background = fig1.canvas.copy_from_bbox(ax1.bbox)
+    ax2background = fig1.canvas.copy_from_bbox(ax2.bbox)
+    ax3background = fig1.canvas.copy_from_bbox(ax3.bbox)
+    ax4background = fig1.canvas.copy_from_bbox(ax4.bbox)
+    ax5background = fig1.canvas.copy_from_bbox(ax5.bbox)
+    ax6background = fig1.canvas.copy_from_bbox(ax6.bbox)
+
+    fig1.canvas.draw()   # note that the first draw comes before setting data 
+
     plt.show(block=False)
     time.sleep(1)
 
@@ -132,9 +125,9 @@ def main():
         fig1.canvas.restore_region(ax1background)
         fig1.canvas.restore_region(ax2background)
         fig1.canvas.restore_region(ax3background)
-        fig2.canvas.restore_region(ax4background)
-        fig2.canvas.restore_region(ax5background)
-        fig2.canvas.restore_region(ax6background)
+        fig1.canvas.restore_region(ax4background)
+        fig1.canvas.restore_region(ax5background)
+        fig1.canvas.restore_region(ax6background)
 
         # redraw just the points
         ax1.draw_artist(line1)
@@ -149,13 +142,12 @@ def main():
         fig1.canvas.blit(ax1.bbox)
         fig1.canvas.blit(ax2.bbox)
         fig1.canvas.blit(ax3.bbox)
-        fig2.canvas.blit(ax4.bbox)
-        fig2.canvas.blit(ax5.bbox)
-        fig2.canvas.blit(ax6.bbox)
+        fig1.canvas.blit(ax4.bbox)
+        fig1.canvas.blit(ax5.bbox)
+        fig1.canvas.blit(ax6.bbox)
 
         # Update
         fig1.canvas.flush_events()
-        fig2.canvas.flush_events()
     # time.sleep(10)
 
 

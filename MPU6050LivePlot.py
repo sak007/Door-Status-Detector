@@ -48,6 +48,7 @@ def main():
     ax2background = fig.canvas.copy_from_bbox(ax2.bbox)
     ax3background = fig.canvas.copy_from_bbox(ax3.bbox)
     plt.show(block=False)
+    time.sleep(3)
 
     # Start the sensor and buffer
     sensor = MPU6050.MPU6050()

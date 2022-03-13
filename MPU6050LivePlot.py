@@ -17,13 +17,21 @@ def shiftAndInsert(arr, val):
 
 def main():
     sampleRate = 25
+    gRange = 250 # degrees/s
+    aRange = 2 # gs
+    # Start the sensor and buffer
+    sensor = MPU6050.MPU6050(sampleRate=sampleRate, gRange=gRange, aRange=aRange)
+    buf = MPU6050Buffer.MPU6050Buffer(sensor)
     timeToDisplay = 8
     numPoints = sampleRate*timeToDisplay
     x = np.linspace(timeToDisplay, 0, num=numPoints) # Preallocate 100 size array
     fig = plt.figure()
     ax1 = fig.add_subplot(3, 1, 1)
+    plt.title("Accelerometers")
     ax2 = fig.add_subplot(3, 1, 2)
+    plt.ylabel("g")
     ax3 = fig.add_subplot(3, 1, 3)
+    plt.xlabel("Time since now (s)")
     accelX = np.zeros(numPoints)
     accelY = np.zeros(numPoints)
     accelZ = np.zeros(numPoints)
@@ -31,15 +39,15 @@ def main():
     line1, = ax1.plot([], lw=3)
     line2, = ax2.plot([], lw=3)
     line3, = ax3.plot([], lw=3)
-    text = ax1.text(3.8,.75, "")
+    text = ax1.text(timeToDisplay - .2, aRange/2, "")
 
     # Set x and y axis limits
     ax1.set_xlim(x.max(), x.min())
-    ax1.set_ylim([-2, 2])
+    ax1.set_ylim([-1*aRange, aRange])
     ax2.set_xlim(x.max(), x.min())
-    ax2.set_ylim([-2, 2])
+    ax2.set_ylim([-1*aRange, aRange])
     ax3.set_xlim(x.max(), x.min())
-    ax3.set_ylim([-2, 2])
+    ax3.set_ylim([-1*aRange, aRange])
 
     fig.canvas.draw()   # note that the first draw comes before setting data 
 
@@ -48,13 +56,11 @@ def main():
     ax2background = fig.canvas.copy_from_bbox(ax2.bbox)
     ax3background = fig.canvas.copy_from_bbox(ax3.bbox)
     plt.show(block=False)
-    time.sleep(3)
+    time.sleep(1)
 
-    # Start the sensor and buffer
-    sensor = MPU6050.MPU6050()
-    buf = MPU6050Buffer.MPU6050Buffer(sensor)
+
+    print("Starting")
     buf.start()
-
     t_start = time.time()
     # for i in np.arange(1000):
     i=0
@@ -76,7 +82,8 @@ def main():
         line2.set_data(x, accelY)
         line3.set_data(x, accelZ)
         i+=1
-        tx = 'Mean Frame Rate:\n {fps:.3f}FPS'.format(fps= ((i) / (time.time() - t_start)) ) 
+        #tx = 'Mean Frame Rate:\n {fps:.3f}FPS'.format(fps= ((i) / (time.time() - t_start)) ) 
+        tx = '{fps:.3f}FPS'.format(fps= ((i) / (time.time() - t_start)))
         text.set_text(tx)
 
         # restore background
@@ -87,7 +94,7 @@ def main():
         # redraw just the points
         ax1.draw_artist(line1)
         ax2.draw_artist(line2)
-        ax2.draw_artist(line3)
+        ax3.draw_artist(line3)
         ax1.draw_artist(text)
 
         # fill in the axes rectangle

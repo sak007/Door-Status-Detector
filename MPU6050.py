@@ -129,10 +129,13 @@ class MPU6050:
     # Since we read from 6 channels, we need 12 bytes
     # If len is 1024, that means we lost the oldest data
     def isDataAvailable(self):
+        # try:
         bufferlen = self.readBufferLen()
+        # except Exception:
+        #     bufferlen = self.readBufferLen()
         if bufferlen == 1024:
             raise Exception("MPU06050 FIFO Buffer overflow")
-        elif bufferlen < 12: # Not ready
+        elif bufferlen < 24: # Not ready
             return False
         else: # Ready
             return True
@@ -156,6 +159,12 @@ def twosComplement2Int(val):
     if(val > 32768): # Negative Value
         val -= 65536
     return val
+
+# Computes the sample rate that will be outputed by the 
+# MPU6050 for a requested sample rate base on the internal formula
+def expectedSampleRate(requestedSampleRate):
+    sampleRateDivier = (8000 / requestedSampleRate) - 1
+    return 8000 / sampleRateDivier
 
 def stringifyVals(vals):
     mystr = "{:4.2f}".format(vals[0])

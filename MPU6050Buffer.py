@@ -9,28 +9,33 @@ Reads from the given MPU6050 sensor into a buffer, storing each tuple of
 the raspberry pi 4 can only handle sample rates somewhere between 250-360.
 """
 class MPU6050Buffer(Thread):
-    def __init__(self, MPU6050):
+    def __init__(self, sensor):
         super().__init__()
-        self.sensor = MPU6050
+        self.sensor = sensor
         self.buffer = deque()
         self.thread = Thread()
         self.stopF = False
         self.bufferEn = True
+        
 
     # private, activate by calling start()
     # Begins reading from the sensor into the buffer
     def run(self):
+        self.running = True
         self.bufferEn = True
         while not self.stopF: 
             if self.bufferEn:
                 self.runBuffer()
             else:
                 time.sleep(.01)
+        self.running = False
 
     # Sets the flags neceesssary to stop the buffering thread
-    def stop(self):
+    def stop(self, block=False):
         self.stopBuffering()
         self.stopF = True
+        while block and self.running:
+            time.sleep(.001)
 
     # private, reads data from the sensor buffer, may throw an exception
     # if the sensor FIFO buffer overflows
@@ -38,14 +43,15 @@ class MPU6050Buffer(Thread):
         self.sensor.clearBuffer()
         self.buffer.clear()
         while self.bufferEn:
+            time.sleep(.05)
             if self.sensor.isDataAvailable(): # Check if there is data to read and for overflow
                 numChunks = int(self.sensor.readBufferLen() / 12) # number of 12 byte chunks
                 for i in range(numChunks): # Read and store the data
                     data = self.sensor.readBuffer()
                     self.buffer.append(data)
                     # print("data", data)
-            else:
-                time.sleep(.005)
+            # else:
+            #     time.sleep(.005)
 
     def startBuffering(self):
         self.bufferEn = True
@@ -68,7 +74,7 @@ class MPU6050Buffer(Thread):
 
 # Tests the buffer
 def main():
-    sensor = MPU6050(sampleRate=25)
+    sensor = MPU6050(sampleRate=200)
     buf = MPU6050Buffer(sensor)
     time.sleep(.05)
     assert buf.bufferLen() == 0 # Check to make sure buffering hasnt started

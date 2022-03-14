@@ -17,7 +17,7 @@ def shiftAndInsert(arr, val):
 
 def main():
     sampleRate = 50
-    gRange = 500 # degrees/s
+    gRange = 250 # degrees/s
     aRange = 2 # gs
     # Start the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, gRange=gRange, aRange=aRange)

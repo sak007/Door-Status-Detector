@@ -1,3 +1,4 @@
+import RPi.GPIO as GPIO
 import os
 import time
 import math
@@ -11,10 +12,11 @@ from Button import Button
 from IOConfig import *
 
 BATime = 1 # Amount of time to record data before and after open/close
+GPIO.setmode(GPIO.BOARD)
 # data_0_0.csv
 
 MyFolder = "data/radek/"
-MyFolder = "data/debug/"
+#MyFolder = "data/debug/"
 
 # Looks at the filenames in a given directory to see if they match the formart
 # data_#_#.csv to try to get the second #, which we consider to be the file id
@@ -33,6 +35,11 @@ def getStartingId(folder):
     return myid
 
 def main():
+    setup()
+    GPIO.output(OPEN_LED, GPIO.LOW)
+    GPIO.output(CLOSE_LED, GPIO.LOW)
+    oBtn = Button(DOOR_OPENED) # Detect when the door finished opening
+    cBtn = Button(DOOR_CLOSED) # Detect when the door finished closing
     # Get last used file id
     myid = getStartingId(MyFolder)
     # Sensor Settings
@@ -45,11 +52,10 @@ def main():
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, aRange=aRange, gRange=gRange)
     buf = MPU6050Buffer.MPU6050Buffer(sensor)
     # Buffer trigger button
-    setup()
-    oBtn = Button(DOOR_OPENED) # Detect when the door finished opening
-    cBtn = Button(DOOR_CLOSED) # Detect when the door finished closing
+    
 
-    trials = 2
+
+    trials = 50
     for k in range(trials):
         if oBtn.isOn(): # Door is open
             myclass = 1  # closing it
@@ -68,15 +74,20 @@ def main():
             buf.startBuffering()
         time.sleep(BATime)
         print("Armed")
+        GPIO.output(OPEN_LED, GPIO.HIGH)
+        GPIO.output(CLOSE_LED, GPIO.HIGH)
         while state == 0:
             # Wait until the contact sensor releases
             if myclass == 0 and not cBtn.isOn() or \
                 myclass == 1 and not oBtn.isOn():
                 startTime = time.time()
                 state = 1
+                time.sleep(.25)
                 print("Motion Detected")
                 break
             time.sleep(.005)
+        GPIO.output(OPEN_LED, GPIO.LOW)
+        GPIO.output(CLOSE_LED, GPIO.HIGH)
         while state == 1:
             # Wait until the other contact sensor goes live
             if myclass == 0 and oBtn.isOn() or \
@@ -136,7 +147,7 @@ def main():
                     f.write(str(val) + ",")
                 f.write("\n")
         
-        plot = True
+        plot = False
         if plot:
             channel = "ax"
             endPoint = numPoints - math.floor(BATime * actualSampleRate)

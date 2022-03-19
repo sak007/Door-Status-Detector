@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import os
 import numpy as np
 import random
+import pandas as pd
 
 MyFolder = "data/radek/"
 channels = ["ax", "ay", "az", "gx", "gy", "gz"]
@@ -34,18 +35,90 @@ def readFile(file):
     data["class"] = getClass(file)
     return data
 
+BackFiles = ["ax.csv", "ay.csv", "az.csv", "gx.csv", "gy.csv", "gz.csv"]
+def readBackFiles(folder):
+    x = []
+    for file in BackFiles:
+        fileData=pd.read_csv(folder + file, header=None)
+        #fileData.dropna(inplace=True)
+        check = fileData.isna().sum()
+        if sum(check) > 0:
+            raise Exception("NANs in data")
+        x.append(fileData.values)
+    x = np.dstack(x)
+    y = pd.read_csv(folder + "class.csv", header=None)
+    return x,y
+
+def writeData(samples, path):
+    for channel in channels:
+        with open(path + channel + ".csv", "w") as f:
+            for mylist in samples[channel]:
+                f.write(str(mylist[0]))
+                for val in mylist[1:]:
+                    f.write("," + str(val))
+                f.write("\n")
+    with open(path + "class.csv", "w") as f:
+        for val in samples["class"]:
+            f.write(str(val) + "\n")
+
+
+def fill(samples, n, val=0):
+    for channel in channels:
+        for sample in samples[channel]:
+            diff = n - len(sample)
+            for i in range(diff):
+                sample.append(0)
+                #sample.insert(val)
+    return samples
+
+# Given a dictionary of all the samples by channel, this will find the length
+# of the longest sample
+def findShortestAndLongest(samples):
+    shortest = len(samples[channels[0]])
+    longest = 0
+    for sample in samples[channels[0]]:
+        if len(sample) > longest:
+            longest = len(sample)
+        if len(sample) < shortest:
+            shortest = len(sample)
+    return shortest, longest
+
+# Takes a list of samples and splits them into a dictionary, where channels
+# and classes are kept together
+def splitByChannel(samples):
+    data = {"ax":[], "ay":[], "az":[], "gx":[], "gy":[], "gz":[], "class":[]}
+    longest = 0
+    for sample in samples:
+        for channel in channels:
+            data[channel].append(sample[channel])
+        data["class"].append(sample["class"])
+    return data
+
+# Returns data with signals only between start and stop corresponding 
+# to motion of the door
+def getMotionSection(data):
+    start = data["start"]
+    stop = data["stop"]
+    for channel in channels:
+        data[channel] = data[channel][start:stop]
+    data["x"] = data["x"][start:stop]
+    return data
+
 
 # Normalizes data by subtracting the mean and dividing by the standard deviation 
 def normalize(data):
-    mean = np.mean(data,axis=0)
-    sd = np.std(data, axis=0)
+    # mean = np.mean(data,axis=0)
+    # sd = np.std(data, axis=0)
+    # data2 = (data - mean) / sd
+    mean = np.mean(data)
+    sd = np.std(data)
     data2 = (data - mean) / sd
-    return data2
+    return list(data2)
 
 # Normalize each of the signals
 def normailizeData(data):
     for channel in channels:
-        data[channel] = normalize(data[normailizeData])
+        data[channel] = normalize(data[channel])
     return data
 
 def getRandomInts(start, end, numVals):
@@ -71,7 +144,8 @@ def downsample(data, factor):
     data2["gRange"] = data["gRange"]
     data2["start"] = data["start"]
     data2["stop"] = data["stop"] 
-    channels =list(data.keys())[5:11]
+    data2["class"] = data["class"]
+    # channels =list(data.keys())[5:11]
     for channel in channels:
         data2[channel] = []
         for i,val in enumerate(data[channel]):

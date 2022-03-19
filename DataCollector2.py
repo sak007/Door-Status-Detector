@@ -15,7 +15,7 @@ BATime = 1 # Amount of time to record data before and after open/close
 GPIO.setmode(GPIO.BOARD)
 # data_0_0.csv
 
-MyFolder = "data/radek/"
+MyFolder = "data/radek2/"
 #MyFolder = "data/debug/"
 
 # Looks at the filenames in a given directory to see if they match the formart
@@ -64,8 +64,7 @@ def main():
             print("Closing a door")
         else:
             raise Exception("Make sure the door is either open or closed")
-        
-        state = 0
+
         armTime = time.time()
         if k == 0:
             buf.start()
@@ -74,29 +73,30 @@ def main():
         time.sleep(BATime)
         print("Armed")
         GPIO.output(READY_LED, GPIO.HIGH)
-        while state == 0:
-            # Wait until the contact sensor releases
-            if myclass == 0 and not cBtn.isOn() or \
-                myclass == 1 and not oBtn.isOn():
-                startTime = time.time()
-                state = 1
-                time.sleep(.25)
-                print("Motion Detected")
-                break
-            time.sleep(.005)
-        GPIO.output(READY_LED, GPIO.HIGH)
-        while state == 1:
-            # Wait until the other contact sensor goes live
-            if myclass == 0 and oBtn.isOn() or \
-                myclass == 1 and cBtn.isOn():
-                endTime = time.time()
-                print("Contact Detected")
-                time.sleep(BATime)
-                #buf.stop(True)
-                buf.stopBuffering()
-                bufferStopTime = time.time()
-                break
-            time.sleep(.005)
+        # Wait until the contact sensor releases
+        if myclass == 0:
+            GPIO.wait_for_edge(cBtn.pin,GPIO.FALLING)
+        elif myclass == 1:
+            GPIO.wait_for_edge(oBtn.pin, GPIO.FALLING)
+        else:
+            raise Exception()
+        startTime = time.time()
+        time.sleep(.25)
+        print("Motion Detected")
+        # Wait until the other contact sensor goes live
+        GPIO.output(READY_LED, GPIO.LOW)
+        if myclass == 0:
+            GPIO.wait_for_edge(oBtn.pin,GPIO.RISING)
+        elif myclass == 1:
+            GPIO.wait_for_edge(cBtn.pin, GPIO.RISING)
+        else:
+            raise Exception()
+            
+        endTime = time.time()
+        print("Contact Detected")
+        time.sleep(BATime)
+        buf.stopBuffering()
+        bufferStopTime = time.time()
 
         time.sleep(1)
         motionStartTime = startTime - armTime
@@ -148,7 +148,7 @@ def main():
         
         plot = True
         if plot:
-            channel = "ax"
+            channel = "gx"
             endPoint = numPoints - math.floor(BATime * actualSampleRate)
             plt.figure()
             plt.title(channel)

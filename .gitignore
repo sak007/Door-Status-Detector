@@ -1,3 +1,4 @@
+model/
 test.py
 data/debug/*
 # Byte-compiled / optimized / DLL files

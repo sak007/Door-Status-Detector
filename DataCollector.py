@@ -116,7 +116,8 @@ def main():
     data2 = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
     with open(MyFolder + filename, "w") as f:
         f.write("info,\n")
-        f.write("sampleRate, " + str(sampleRate) + ",\n")
+        f.write("requested sampleRate, " + str(sampleRate) + ",\n")
+        f.write("mean sampleRate, " + str(actualSampleRate) + ",\n")
         f.write("aRange, " + str(aRange) + ",\n")
         f.write("gRange, " + str(gRange) + ",\n")
         f.write("start," + str(motionStartPoint) + ",\n")

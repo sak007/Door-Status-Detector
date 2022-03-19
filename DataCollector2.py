@@ -55,7 +55,7 @@ def main():
     
 
 
-    trials = 50
+    trials = 2
     for k in range(trials):
         if oBtn.isOn(): # Door is open
             myclass = 1  # closing it
@@ -126,6 +126,7 @@ def main():
         dataStorePoint = startPoint - math.floor(actualSampleRate * BATime)
         motionStartPoint = math.floor(actualSampleRate * BATime)
         motionEndPoint = math.floor(numPoints - startPoint + BATime * actualSampleRate)
+        dataStorePoint2 = numPoints - dataStorePoint - motionStartPoint
         print("Motion between points: ", motionStartPoint, motionEndPoint)
         # Save the data
         myid += 1
@@ -137,7 +138,8 @@ def main():
             f.write("aRange, " + str(aRange) + ",\n")
             f.write("gRange, " + str(gRange) + ",\n")
             f.write("start," + str(motionStartPoint) + ",\n")
-            f.write("stop," + str(motionEndPoint) + ",\n")
+            f.write("stop," + str(dataStorePoint2) + ",\n")
+            #f.write("stop," + str(motionEndPoint) + ",\n")
             for key in data:
                 f.write(key + ",")
                 for i, val in enumerate(data[key]):
@@ -147,11 +149,12 @@ def main():
                     f.write(str(val) + ",")
                 f.write("\n")
         
-        plot = False
+        plot = True
         if plot:
             channel = "ax"
             endPoint = numPoints - math.floor(BATime * actualSampleRate)
             plt.figure()
+            plt.title(channel)
             x1 = list(range(0, numPoints))
             x2 = list(range(dataStorePoint, numPoints))
             plt.plot(x1, data[channel],  label = "All Data")

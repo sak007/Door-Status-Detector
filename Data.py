@@ -118,7 +118,7 @@ def main():
     print("Opening: ", counts[0])
     print("Closing: ", counts[1])
 
-    i = 0
+    i = 10
     file = MyFolder + files[i]
     data = readFile(file)
     data2 = downsample(data, 2)

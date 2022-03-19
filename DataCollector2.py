@@ -36,8 +36,7 @@ def getStartingId(folder):
 
 def main():
     setup()
-    GPIO.output(OPEN_LED, GPIO.LOW)
-    GPIO.output(CLOSE_LED, GPIO.LOW)
+    GPIO.output(READY_LED, GPIO.LOW)
     oBtn = Button(DOOR_OPENED) # Detect when the door finished opening
     cBtn = Button(DOOR_CLOSED) # Detect when the door finished closing
     # Get last used file id
@@ -74,8 +73,7 @@ def main():
             buf.startBuffering()
         time.sleep(BATime)
         print("Armed")
-        GPIO.output(OPEN_LED, GPIO.HIGH)
-        GPIO.output(CLOSE_LED, GPIO.HIGH)
+        GPIO.output(READY_LED, GPIO.HIGH)
         while state == 0:
             # Wait until the contact sensor releases
             if myclass == 0 and not cBtn.isOn() or \
@@ -86,8 +84,7 @@ def main():
                 print("Motion Detected")
                 break
             time.sleep(.005)
-        GPIO.output(OPEN_LED, GPIO.LOW)
-        GPIO.output(CLOSE_LED, GPIO.HIGH)
+        GPIO.output(READY_LED, GPIO.HIGH)
         while state == 1:
             # Wait until the other contact sensor goes live
             if myclass == 0 and oBtn.isOn() or \

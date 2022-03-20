@@ -11,11 +11,11 @@ from Button import Button
 
 from IOConfig import *
 
-BATime = 1 # Amount of time to record data before and after open/close
+BATime = 1.5 # Amount of time to record data before and after open/close
 GPIO.setmode(GPIO.BOARD)
 # data_0_0.csv
 
-MyFolder = "data/radek2/"
+MyFolder = "data/radek/"
 #MyFolder = "data/debug/"
 
 # Looks at the filenames in a given directory to see if they match the formart
@@ -76,19 +76,27 @@ def main():
         # Wait until the contact sensor releases
         if myclass == 0:
             GPIO.wait_for_edge(cBtn.pin,GPIO.FALLING)
+            startTime = time.time() - .8
+            print("c")
         elif myclass == 1:
             GPIO.wait_for_edge(oBtn.pin, GPIO.FALLING)
+            startTime = time.time() - .35
+            print("d")
         else:
             raise Exception()
-        startTime = time.time()
+        
         time.sleep(.25)
         print("Motion Detected")
         # Wait until the other contact sensor goes live
         GPIO.output(READY_LED, GPIO.LOW)
         if myclass == 0:
             GPIO.wait_for_edge(oBtn.pin,GPIO.RISING)
+            print("a")
+            time.sleep(.45)
         elif myclass == 1:
             GPIO.wait_for_edge(cBtn.pin, GPIO.RISING)
+            print("b")
+            time.sleep(1.15)
         else:
             raise Exception()
             
@@ -146,7 +154,7 @@ def main():
                     f.write(str(val) + ",")
                 f.write("\n")
         
-        plot = True
+        plot = False
         if plot:
             channel = "gx"
             endPoint = numPoints - math.floor(BATime * actualSampleRate)

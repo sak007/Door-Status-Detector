@@ -4,7 +4,7 @@ import numpy as np
 import random
 import pandas as pd
 
-MyFolder = "data/radek/"
+MyFolder = "data/radek2/"
 channels = ["ax", "ay", "az", "gx", "gy", "gz"]
 
 # Looks at the filenames in a given directory to see if they match the formart
@@ -192,7 +192,7 @@ def main():
     print("Opening: ", counts[0])
     print("Closing: ", counts[1])
 
-    i = 10
+    i = 1
     file = MyFolder + files[i]
     data = readFile(file)
     data2 = downsample(data, 2)

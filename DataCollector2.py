@@ -54,8 +54,9 @@ def main():
     
 
 
-    trials = 2
+    trials = 50
     for k in range(trials):
+        print("TRIAL: ", k)
         if oBtn.isOn(): # Door is open
             myclass = 1  # closing it
             print("Opening a door")

@@ -1,0 +1,6 @@
+identity:
+    orgId: 
+    typeId: RaspberryPi
+    deviceId: pi2
+auth:
+    token:

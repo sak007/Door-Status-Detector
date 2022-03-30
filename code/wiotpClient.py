@@ -1,5 +1,6 @@
-import wiotp.sdk.application
+import wiotp.sdk.device
 import json
+import uuid
 
 class Client:
 
@@ -8,17 +9,12 @@ class Client:
         properties = json.load(f)
         self.typeId = properties['DEVICE_TYPE']
         self.deviceId = properties['DEVICE_ID']
-        options = wiotp.sdk.application.parseConfigFile("../application.yaml")
-        self.client = wiotp.sdk.application.ApplicationClient(config=options)
-
-    def connect(self):
+        options = wiotp.sdk.device.parseConfigFile("device.yaml")
+        self.client = wiotp.sdk.device.DeviceClient(config=options)
         self.client.connect()
 
-    def subscribe(self, eventId):
-        self.client.subscribeToDeviceEvents(eventId=eventId)
-
     def publish(self, eventId, eventData):
-        self.client.publishEvent(typeId=self.typeId, deviceId=self.deviceId, eventId=eventId, msgFormat="json", data=eventData, onPublish=self.publishEventCallback)
+        self.client.publishEvent(eventId=eventId, msgFormat="json", data=eventData, qos=2, onPublish=self.publishEventCallback)
 
     def publishEventCallback(self):
         print ("Event data published!")

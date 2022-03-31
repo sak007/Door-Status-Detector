@@ -25,6 +25,7 @@ class MPU6050:
         assert sampleRate <= 1000
         sampleRateDivier = (8000 / sampleRate) - 1
         print("divider:", sampleRateDivier)
+        self.sampleRate = sampleRate
         self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(sampleRateDivier))
         time.sleep(0.1)
         # Power Management/Crystal Register
@@ -86,6 +87,10 @@ class MPU6050:
         gyroY = self.scaleGyro(self.readRegister16(GYRO_YOUT_H))
         gyroZ = self.scaleGyro(self.readRegister16(GYRO_ZOUT_H))
         return accX, accY, accZ, gyroX, gyroY, gyroZ
+
+    # Returns the sample rate of the sensor
+    def getSampleRate(self):
+        return self.sampleRate
 
     # Returns the # of bytes in the FIFO buffer
     # 2 bytes per sensor measurement, 1024 is the size limit

@@ -37,14 +37,16 @@ def main():
     expectedSampleRate = MPU6050.expectedSampleRate(sampleRate) 
     # Initilaize the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, aRange=aRange, gRange=gRange)
-    buf = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,2,sensor)
+    buf = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,sensor)
     
     myclass = 3
     state = 0
     armTime = time.time()
+    print("Initalizing Event Buffer.")
     buf.start()
-    time.sleep(BATime)
-    print("Armed")
+    while buf.isCalibratedFlag() == False:
+        continue
+    print("Buffer Initalization Complete.")
 
     while True:
         if buf.checkForEvent() == True:
@@ -103,7 +105,7 @@ def main():
                         data2[key].append(val)
                         f.write(str(val) + ",")
                     f.write("\n")
-            buf.clear()
+            buf.clearEvent()
             print("Wrote Event: " + filename)
         continue    
 

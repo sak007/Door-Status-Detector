@@ -37,7 +37,7 @@ def main():
     expectedSampleRate = MPU6050.expectedSampleRate(sampleRate) 
     # Initilaize the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, aRange=aRange, gRange=gRange)
-    buf = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,sensor)
+    buf = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,1.0,0.200,0.500,sensor)
     
     myclass = 3
     state = 0

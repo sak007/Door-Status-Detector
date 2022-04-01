@@ -10,12 +10,15 @@ Reads from the given MPU6050 sensor into a buffer, storing each tuple of
 the raspberry pi 4 can only handle sample rates somewhere between 250-360.
 """
 class MPU6050EventBuffer(Thread):
-    def __init__(self, ssCheckTimeSec, ssCheckGxThrsld, sensor):
+    def __init__(self, ssCheckTimeSec, ssCheckGxThrsld, mGXThrshld, mOffToOnDbSec, mOnToOffDbSec, sensor):
         super().__init__()
         # Make these parameters
         self.steadyStateCheckTimeSec = ssCheckTimeSec
         self.steadyStateCheckThreshold = ssCheckGxThrsld
-
+        self.motionGXThrsld = mGXThrshld
+        self.motionGXOffToOnDbCount = sensor.getSampleRate() * mOffToOnDbSec
+        self.motionGXOnToOffDbCount = sensor.getSampleRate() * mOnToOffDbSec
+        self.motionGXDbCountRem = self.motionGXOffToOnDbCount
         self.sensor = sensor
         self.steadyStateCheckGxBuffer = deque()
         self.steadyStateCheckBuffer = deque()
@@ -70,6 +73,7 @@ class MPU6050EventBuffer(Thread):
                 numChunks = int(self.sensor.readBufferLen() / 12) # number of 12 byte chunks
                 for i in range(numChunks): # Read and store the data
                     data = self.sensor.readBuffer()
+                    gXData = data[3]
 
                     self.updateSteadyStateBuffer(data)
 
@@ -77,34 +81,50 @@ class MPU6050EventBuffer(Thread):
                     if self.isSteadyStateBufferReady() == True:
                         isSteadyFlag = self.isSteadyState()
 
-                        if self.autoCalComplete == True:
-                            if isSteadyFlag == False and (self.eventStartPoint == -1):
-                                # If the delta values in the buffer show movement, start the capture
-                                self.eventBeingTracked = True
-                                self.initEventBuffer()
-                                self.eventEndOfCaptureCount = math.floor(self.steadySteateCheckCount / 2)
-                                self.eventEndPoint = -1
-                                print("Start Capture")
-                            
-                            elif isSteadyFlag == False and (self.eventStartPoint != -1):
-                                # Data is still not steady, capture still in progress
-                                self.updateEventBuffer(data)
-                                self.eventEndOfCaptureCount = math.floor(self.steadySteateCheckCount / 2)
-                                self.eventEndPoint = -1
-
-                            elif isSteadyFlag == True and (self.eventBeingTracked == True):
-                                # If the delta values in the buffer show steady state, debounce the
-                                # end of capture counter and end the event when it expires
-                                self.updateEventBuffer(data)
-                                if self.eventEndPoint == -1:
-                                    self.eventEndPoint = len(self.eventBuffer) - self.steadySteateCheckCount
-
-                                if self.eventEndOfCaptureCount > 0:
-                                    self.eventEndOfCaptureCount -= 1
+                        if self.autoCalComplete == True and self.eventCaptured == False:
+                            # No Event Captured, Keep Checking...
+                            if ((gXData < self.motionGXThrsld) and (gXData > -1 * self.motionGXThrsld)):
+                                # Inside motion deadband
+                                if self.eventBeingTracked == False:
+                                    # No Motion, and not yet tracking event, reset counters
+                                    self.motionGXDbCountRem  = self.motionGXOffToOnDbCount
+                                    self.eventStartPoint = -1
                                 else:
-                                    self.eventBeingTracked = False
-                                    self.eventCaptured = True
-                        else:
+                                    # No Motion, but currently tracking event, record point
+                                    # and start debouncing
+                                    self.eventBuffer.append(data)
+                                    if self.motionGXDbCountRem > 0:
+                                        if self.eventEndPoint == -1:
+                                            self.eventEndPoint = len(self.eventBuffer)
+                                        self.motionGXDbCountRem -= 1
+                                    else:
+                                        self.eventBeingTracked = False
+                                        self.eventCaptured = True
+                                        print("Event Detected - Stop Capture")
+                            else:
+                                # Outside motion deadband
+                                if self.eventBeingTracked == True:
+                                    # Motion and event being tracked, reset counters
+                                    self.eventBuffer.append(data)
+                                    self.motionGXDbCountRem  = self.motionGXOnToOffDbCount
+                                    self.eventEndPoint = -1                                    
+                                else:
+                                    if self.motionGXDbCountRem > 0:
+                                        # Motion seen, track record point and start debouncing
+                                        if self.eventStartPoint == -1:
+                                            self.eventBuffer = self.steadyStateCheckBuffer.copy()
+                                            self.eventStartPoint = len(self.eventBuffer)
+                                        else:
+                                            self.eventBuffer.append(data)                                            
+                                        self.motionGXDbCountRem -= 1
+                                    else:
+                                        # Debounced motion, this is a real event
+                                        self.eventBuffer.append(data)
+                                        self.eventBeingTracked = True
+                                        print("Event Detected - Start Capture")
+
+                        elif self.autoCalComplete == False:
+                            # Perform IMU Auto Calibration
                             if isSteadyFlag == False:
                                 self.autoCalCountRem = self.autoCalCount
                                 self.autoCalAXVal = 0
@@ -129,7 +149,8 @@ class MPU6050EventBuffer(Thread):
                                     self.autoCalGXVal = self.autoCalGXVal / self.autoCalCount
                                     self.autoCalGYVal = self.autoCalGYVal / self.autoCalCount
                                     self.autoCalGZVal = self.autoCalGZVal / self.autoCalCount
-                                    self.autoCalComplete = True                        
+                                    self.autoCalComplete = True
+                                    print("Auto Cal Complete - AXOffset: " + str(self.autoCalAXVal) + ", AYOffset: " + str(self.autoCalAYVal) + ", AZOffset: " + str(self.autoCalAZVal) + ", GXOffset: " + str(self.autoCalGXVal) + ", GYOffset: " + str(self.autoCalGYVal) + ", GZOffset: " + str(self.autoCalGZVal))                        
                                     self.sensor.setSensorOffsets(
                                         self.autoCalAXVal, 
                                         self.autoCalAYVal,
@@ -144,16 +165,6 @@ class MPU6050EventBuffer(Thread):
 
     def isCalibratedFlag(self):
         return self.autoCalComplete
-
-    def initEventBuffer(self):
-        self.eventBuffer = self.steadyStateCheckBuffer.copy()
-        self.eventStartPoint = len(self.eventBuffer)
- 
-    def updateEventBuffer(self,data):
-        # Only store the data if we don't already have a captured event and an
-        # active event is being tracked
-        if self.eventCaptured != True and self.eventBeingTracked == True:
-            self.eventBuffer.append(data)        
 
     def updateSteadyStateBuffer(self,data):
         self.steadyStateCheckGxBuffer.append(data[3])
@@ -208,7 +219,6 @@ class MPU6050EventBuffer(Thread):
     def clearEvent(self):
         self.eventCaptured = False
         self.eventBuffer.clear()
-        self.eventBuffer = self.steadyStateCheckBuffer.copy()
         self.eventStartPoint = -1
         self.eventEndPoint = -1
 

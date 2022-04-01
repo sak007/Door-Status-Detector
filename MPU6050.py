@@ -25,6 +25,13 @@ class MPU6050:
         assert sampleRate <= 1000
         sampleRateDivier = (8000 / sampleRate) - 1
         print("divider:", sampleRateDivier)
+        self.accXOffset = 0
+        self.accYOffset = 0
+        self.accZOffset = 0
+        self.gyroXOffset = 0
+        self.gyroYOffset = 0
+        self.gyroZOffset = 0
+        self.sampleRate = sampleRate
         self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(sampleRateDivier))
         time.sleep(0.1)
         # Power Management/Crystal Register
@@ -78,14 +85,26 @@ class MPU6050:
     # Note, not guarenteed to be synchronously sampled, use for 
     # debug only
     def readLive(self):
-        accX = self.scaleAccel(self.readRegister16(ACCEL_XOUT_H))
-        accY = self.scaleAccel(self.readRegister16(ACCEL_YOUT_H))
-        accZ = self.scaleAccel(self.readRegister16(ACCEL_ZOUT_H))
+        accX = self.scaleAccel(self.readRegister16(ACCEL_XOUT_H)) - self.accXOffset
+        accY = self.scaleAccel(self.readRegister16(ACCEL_YOUT_H)) - self.accYOffset
+        accZ = self.scaleAccel(self.readRegister16(ACCEL_ZOUT_H)) - self.accZOffset
         
-        gyroX = self.scaleGyro(self.readRegister16(GYRO_XOUT_H))
-        gyroY = self.scaleGyro(self.readRegister16(GYRO_YOUT_H))
-        gyroZ = self.scaleGyro(self.readRegister16(GYRO_ZOUT_H))
+        gyroX = self.scaleGyro(self.readRegister16(GYRO_XOUT_H)) - self.gyroXOffset
+        gyroY = self.scaleGyro(self.readRegister16(GYRO_YOUT_H)) - self.gyroYOffset
+        gyroZ = self.scaleGyro(self.readRegister16(GYRO_ZOUT_H)) - self.gyroZOffset
         return accX, accY, accZ, gyroX, gyroY, gyroZ
+
+    def setSensorOffsets(self,accXOffset, accYOffset, accZOffset, gyroXOffset, gyroYOffset, gyroZOffset):
+        self.accXOffset = accXOffset
+        self.accYOffset = accYOffset
+        self.accZOffset = accZOffset
+        self.gyroXOffset = gyroXOffset
+        self.gyroYOffset = gyroYOffset
+        self.gyroZOffset = gyroZOffset
+
+    # Returns the sample rate of the sensor
+    def getSampleRate(self):
+        return self.sampleRate
 
     # Returns the # of bytes in the FIFO buffer
     # 2 bytes per sensor measurement, 1024 is the size limit
@@ -106,13 +125,13 @@ class MPU6050:
 
     # Reads accel and gyro burst from the FIFO buffer
     def readBuffer(self):
-        accX = self.scaleAccel(self.readBuffer16())
-        accY = self.scaleAccel(self.readBuffer16())
-        accZ = self.scaleAccel(self.readBuffer16())
+        accX = self.scaleAccel(self.readBuffer16()) - self.accXOffset
+        accY = self.scaleAccel(self.readBuffer16()) - self.accYOffset
+        accZ = self.scaleAccel(self.readBuffer16()) - self.accZOffset
         
-        gyroX = self.scaleGyro(self.readBuffer16())
-        gyroY = self.scaleGyro(self.readBuffer16())
-        gyroZ = self.scaleGyro(self.readBuffer16())
+        gyroX = self.scaleGyro(self.readBuffer16()) - self.gyroXOffset
+        gyroY = self.scaleGyro(self.readBuffer16()) - self.gyroYOffset
+        gyroZ = self.scaleGyro(self.readBuffer16()) - self.gyroZOffset
         return accX, accY, accZ, gyroX, gyroY, gyroZ
 
     def readBufferRaw(self):

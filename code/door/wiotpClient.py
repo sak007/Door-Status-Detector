@@ -1,6 +1,7 @@
 import wiotp.sdk.device
 import json
 import uuid
+from time import sleep
 
 class DeviceClient:
 
@@ -9,8 +10,9 @@ class DeviceClient:
         properties = json.load(f)
         self.typeId = properties['DEVICE_TYPE']
         self.deviceId = properties['DEVICE_ID']
-        options = wiotp.sdk.device.parseConfigFile("../device.yaml")
+        options = wiotp.sdk.device.parseConfigFile("device.yaml")
         self.client = wiotp.sdk.device.DeviceClient(config=options)
+        self.client.commandCallback = self.commandCallback
         self.client.connect()
 
     def publish(self, eventId, eventData):
@@ -18,6 +20,10 @@ class DeviceClient:
 
     def publishEventCallback(self):
         print ("Event data published!")
+
+    def commandCallback(self, data):
+        print("Command callback")
+        print(data)
 
 if __name__ == "__main__":
     try:

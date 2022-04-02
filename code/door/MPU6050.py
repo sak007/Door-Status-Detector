@@ -24,7 +24,7 @@ class MPU6050:
         # sampleRate is achieved, 
         assert sampleRate <= 1000
         sampleRateDivier = (8000 / sampleRate) - 1
-        print("divider:", sampleRateDivier)
+        #print("divider:", sampleRateDivier)
         self.accXOffset = 0
         self.accYOffset = 0
         self.accZOffset = 0
@@ -148,12 +148,11 @@ class MPU6050:
     # Since we read from 6 channels, we need 12 bytes
     # If len is 1024, that means we lost the oldest data
     def isDataAvailable(self):
-        # try:
         bufferlen = self.readBufferLen()
-        # except Exception:
-        #     bufferlen = self.readBufferLen()
         if bufferlen == 1024:
-            raise Exception("MPU06050 FIFO Buffer overflow")
+            print("MPU06050 FIFO Buffer overflow. Clearing buffer data may have been lost.")
+            self.clearBuffer()
+            return False
         elif bufferlen < 24: # Not ready
             return False
         else: # Ready

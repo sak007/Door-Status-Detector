@@ -1,6 +1,6 @@
 identity:
-    orgId: 
+    orgId: 9jw3q8
     typeId: RaspberryPi
-    deviceId: pi2
+    deviceId: justin-pi1
 auth:
-    token:
+    token: justin-pi1

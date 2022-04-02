@@ -1,6 +1,7 @@
 import os
 import time
 import math
+import json
 
 import MPU6050
 import MPU6050EventBuffer
@@ -33,7 +34,6 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
     avgGx = sum(data[channels[3]])/len(data[channels[3]])
     maxGx = max(data[channels[3]])
     minGx = min(data[channels[3]])
-
 
     print("Avg Gx: " + str(avgGx) + ", Min Gx: " + str(minGx) + ", Max Gx: "  + str(maxGx))
 
@@ -76,7 +76,13 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
             f.write("\n")
     print("Wrote Event: " + filename)
 
-def main(training):
+def main():
+
+    f = open('../../properties.json')
+    properties = json.load(f)
+    DOOR_MODE = properties['DOOR_MODE']
+    DOOR_TRAIN_FOLDER = properties['DOOR_TRAIN_FOLDER']
+
     # Sensor Settings
     sampleRate = 100
     aRange = 2
@@ -85,39 +91,44 @@ def main(training):
     expectedSampleRate = MPU6050.expectedSampleRate(sampleRate)
     # Initilaize the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, aRange=aRange, gRange=gRange)
-    buf = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,1.0,0.200,0.500,sensor)
+    eventBuffer = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,10,0.200,0.500,sensor)
 
-    myclass = 3
-    state = 0
-    armTime = time.time()
-    print("Initalizing Event Buffer.")
-    buf.start()
-    while buf.isCalibratedFlag() == False:
+    print("Initalizing Event Buffer...")
+    eventBuffer.start()
+    while eventBuffer.isCalibratedFlag() == False:
         continue
     print("Buffer Initalization Complete.")
-    client = DeviceClient()
+
+    if DOOR_MODE != "train":
+        client = DeviceClient()
+        print("Event monitoring ready, capturing events for classification.")
+    else: 
+        print("Event monitoring ready, capturing events for training.")
+
     while True:
-        if buf.checkForEvent() == True:
+        if eventBuffer.checkForEvent() == True:
             data = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
             channels = list(data.keys())
             # Extract data from the buffer and organize it by channel
-            numPoints = buf.bufferLen()
+            numPoints = eventBuffer.bufferLen()
             print("Num Points:" + str(numPoints))
+
             for i in range(numPoints):
-                chunk = buf.read()
+                chunk = eventBuffer.read()
                 for j, val in enumerate(chunk): # For each channel
                     data[channels[j]].append(val)
-            motionStartPoint = buf.getEventStartPoint()
-            motionEndPoint = buf.getEventEndPoint()
-            if training:
+
+            motionStartPoint = eventBuffer.getEventStartPoint()
+            motionEndPoint = eventBuffer.getEventEndPoint()
+
+            if DOOR_MODE == "train":
                 addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange)
             else:
                 for e in data.keys():
                     data[e] = data[e][motionStartPoint:motionEndPoint]
                 client.publish('imu', data)
-            buf.clearEvent()
-        continue
 
+            eventBuffer.clearEvent()
 
 if __name__ == "__main__":
-    main(False)
+    main()

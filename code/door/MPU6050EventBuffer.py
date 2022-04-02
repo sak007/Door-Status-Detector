@@ -1,6 +1,7 @@
 from collections import deque
 import time
 import math
+import statistics
 from threading import Thread
 from MPU6050 import MPU6050
 
@@ -10,12 +11,13 @@ Reads from the given MPU6050 sensor into a buffer, storing each tuple of
 the raspberry pi 4 can only handle sample rates somewhere between 250-360.
 """
 class MPU6050EventBuffer(Thread):
-    def __init__(self, ssCheckTimeSec, ssCheckGxThrsld, mGXThrshld, mOffToOnDbSec, mOnToOffDbSec, sensor):
+    def __init__(self, ssCheckTimeSec, ssCheckGxThrshld, mGXSigmaThrshld, mOffToOnDbSec, mOnToOffDbSec, sensor):
         super().__init__()
         # Make these parameters
         self.steadyStateCheckTimeSec = ssCheckTimeSec
-        self.steadyStateCheckThreshold = ssCheckGxThrsld
-        self.motionGXThrsld = mGXThrshld
+        self.steadyStateCheckThreshold = ssCheckGxThrshld
+        self.motionGXSigmaThrsld = mGXSigmaThrshld
+        self.motionGXThrsld = 0         # Determined during autocalibration
         self.motionGXOffToOnDbCount = sensor.getSampleRate() * mOffToOnDbSec
         self.motionGXOnToOffDbCount = sensor.getSampleRate() * mOnToOffDbSec
         self.motionGXDbCountRem = self.motionGXOffToOnDbCount
@@ -34,6 +36,7 @@ class MPU6050EventBuffer(Thread):
         self.bufferEn = True
         self.autoCalCount = sensor.getSampleRate() * 3 # Three seconds of auto calibration time
         self.autoCalCountRem = self.autoCalCount
+        self.autoCalData = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
         self.autoCalGXVal = 0
         self.autoCalGYVal = 0
         self.autoCalGZVal = 0
@@ -127,6 +130,12 @@ class MPU6050EventBuffer(Thread):
                             # Perform IMU Auto Calibration
                             if isSteadyFlag == False:
                                 self.autoCalCountRem = self.autoCalCount
+                                self.autoCalData["ax"].clear()
+                                self.autoCalData["ay"].clear()
+                                self.autoCalData["az"].clear()
+                                self.autoCalData["gx"].clear()
+                                self.autoCalData["gy"].clear()
+                                self.autoCalData["gz"].clear()
                                 self.autoCalAXVal = 0
                                 self.autoCalAYVal = 0
                                 self.autoCalAZVal = 0
@@ -136,21 +145,26 @@ class MPU6050EventBuffer(Thread):
                             else:
                                 self.autoCalCountRem -= 1
                                 if self.autoCalCountRem > 0:
-                                    self.autoCalAXVal += data[0]
-                                    self.autoCalAYVal += data[1]
-                                    self.autoCalAZVal += data[2]
-                                    self.autoCalGXVal += data[3]
-                                    self.autoCalGYVal += data[4]
-                                    self.autoCalGZVal += data[5]
+                                    self.autoCalData["ax"].append(data[0])
+                                    self.autoCalData["ay"].append(data[1])
+                                    self.autoCalData["az"].append(data[2])
+                                    self.autoCalData["gx"].append(data[3])
+                                    self.autoCalData["gy"].append(data[4])
+                                    self.autoCalData["gz"].append(data[5])
                                 else:
-                                    self.autoCalAXVal = self.autoCalAXVal / self.autoCalCount
-                                    self.autoCalAYVal = self.autoCalAYVal / self.autoCalCount
-                                    self.autoCalAZVal = self.autoCalAZVal / self.autoCalCount
-                                    self.autoCalGXVal = self.autoCalGXVal / self.autoCalCount
-                                    self.autoCalGYVal = self.autoCalGYVal / self.autoCalCount
-                                    self.autoCalGZVal = self.autoCalGZVal / self.autoCalCount
-                                    self.autoCalComplete = True
-                                    print("Auto Cal Complete - AXOffset: " + str(self.autoCalAXVal) + ", AYOffset: " + str(self.autoCalAYVal) + ", AZOffset: " + str(self.autoCalAZVal) + ", GXOffset: " + str(self.autoCalGXVal) + ", GYOffset: " + str(self.autoCalGYVal) + ", GZOffset: " + str(self.autoCalGZVal))                        
+                                    self.autoCalAXVal = sum(self.autoCalData["ax"])/len(self.autoCalData["ax"])
+                                    self.autoCalAYVal = sum(self.autoCalData["ay"])/len(self.autoCalData["ay"])
+                                    self.autoCalAZVal = sum(self.autoCalData["az"])/len(self.autoCalData["az"])
+                                    self.autoCalGXVal = sum(self.autoCalData["gx"])/len(self.autoCalData["gx"])
+                                    self.autoCalGYVal = sum(self.autoCalData["gy"])/len(self.autoCalData["gy"])
+                                    self.autoCalGZVal = sum(self.autoCalData["gz"])/len(self.autoCalData["gz"])
+                                    self.motionGXThrsld = statistics.stdev(self.autoCalData["gx"]) * self.motionGXSigmaThrsld
+                                    self.autoCalData["ax"].clear()
+                                    self.autoCalData["ay"].clear()
+                                    self.autoCalData["az"].clear()
+                                    self.autoCalData["gx"].clear()
+                                    self.autoCalData["gy"].clear()
+                                    self.autoCalData["gz"].clear()
                                     self.sensor.setSensorOffsets(
                                         self.autoCalAXVal, 
                                         self.autoCalAYVal,
@@ -159,6 +173,8 @@ class MPU6050EventBuffer(Thread):
                                         self.autoCalGYVal,
                                         self.autoCalGZVal)
                                     self.resetBuffer()
+                                    print("Auto Cal Complete - Motion Threshold: " + str(self.motionGXThrsld) + ", AXOffset: " + str(self.autoCalAXVal) + ", AYOffset: " + str(self.autoCalAYVal) + ", AZOffset: " + str(self.autoCalAZVal) + ", GXOffset: " + str(self.autoCalGXVal) + ", GYOffset: " + str(self.autoCalGYVal) + ", GZOffset: " + str(self.autoCalGZVal))                        
+                                    self.autoCalComplete = True
                                     break
 
         self.runningB = False

@@ -1,4 +1,6 @@
 {
   "DEVICE_TYPE": "RaspberryPi",
-  "DEVICE_ID": "pi1"
+  "DEVICE_ID": "pi1",
+  "DOOR_MODE": "train",
+  "DOOR_TRAIN_FOLDER": "data/jppahl"
 }

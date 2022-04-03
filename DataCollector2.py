@@ -10,7 +10,10 @@ import MPU6050Buffer
 from Button import Button
 
 from IOConfig import *
-
+# + Signal is opening
+# - is closing
+# 0 is  closing
+# 1 is opening
 BATime = 1.5 # Amount of time to record data before and after open/close
 GPIO.setmode(GPIO.BOARD)
 # data_0_0.csv

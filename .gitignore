@@ -3,7 +3,7 @@ data/train
 data/test
 data/val
 .DS_store
-model/
+code/ML/model/
 test.py
 data/debug/*
 # Byte-compiled / optimized / DLL files

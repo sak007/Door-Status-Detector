@@ -7,14 +7,22 @@ import MPU6050
 import MPU6050EventBuffer
 from wiotpClient import DeviceClient
 
+# LED to indicate when looking for motion
+import matplotlib.pyplot as plt
+import RPi.GPIO as GPIO
+READY_LED = 33
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(READY_LED, GPIO.OUT)
+
+
 #from Button import Button
 
 #from IOConfig import *
 
 BATime = 1 # Amount of time to record data before and after open/close
 
-MyFolder = "../../data/jppahl/"
-
+MyFolder = "../../data/radek2/"
+counter = [0,0]
 # Looks at the filenames in a given directory to see if they match the formart
 # data_#_#.csv to try to get the second #, which we consider to be the file id
 # to get the next available id for the next file
@@ -31,6 +39,7 @@ def getStartingId(folder):
     return myid
 
 def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange):
+    global counter
     avgGx = sum(data[channels[3]])/len(data[channels[3]])
     maxGx = max(data[channels[3]])
     minGx = min(data[channels[3]])
@@ -46,17 +55,20 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
     # average is to try an avoid classifying an open and close
     # event as either simply and open or a close.
     if avgGx > 5:
-        if minGx > -5:
-            myclass = "o" # Open event
-        else:
-            myclass = "u" # Unknown event
-    elif avgGx < -5:
-        if maxGx < 5:
-            myclass = "c" # Close event
-        else:
-            myclass = "u" # Unknown event
+        counter[0]+=1
+        myclass = "o" # Open event
+        print("DOOR OPENING")
+    elif avgGx <= -5:
+        counter[1]+=1
+        myclass = "c" # Close event
+        print("DOOR CLOSING")
     else:
-        myclass = "u" # Unknown event
+        print("WTF")
+        # Do not raise and exception unless you want to be alerted when you are getting unclassified data
+        raise Exception("WTF")
+    print("OPENS: " + str(counter[0]))
+    print("CLOSES: " + str(counter[1]))
+
 
     myid = getStartingId(MyFolder) + 1
     filename = "data_" + myclass + "_" + str(myid) + ".csv"
@@ -77,7 +89,7 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
     print("Wrote Event: " + filename)
 
 def main():
-
+    plot = False # Set true to enable debug plot
     f = open('../../properties.json')
     properties = json.load(f)
     DOOR_MODE = properties['DOOR_MODE']
@@ -104,7 +116,8 @@ def main():
         print("Event monitoring ready, capturing events for classification.")
     else: 
         print("Event monitoring ready, capturing events for training.")
-
+    GPIO.output(READY_LED, GPIO.HIGH)
+    state = 0
     while True:
         if eventBuffer.checkForEvent() == True:
             data = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
@@ -123,12 +136,24 @@ def main():
 
             if DOOR_MODE == "train":
                 addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange)
+                if plot:
+                    plt.plot(list(range(0,numPoints)), data["gx"])
+                    plt.axvline(x=motionStartPoint, color = "k")
+                    plt.axvline(x=motionEndPoint, color = "k")
+                    plt.show()
             else:
                 for e in data.keys():
                     data[e] = data[e][motionStartPoint:motionEndPoint]
                 client.publish('imu', data)
 
             eventBuffer.clearEvent()
+            # Alternate LED on off to let user know next motion
+            if state == 0:
+                GPIO.output(READY_LED, GPIO.LOW)
+                state = 1
+            else:
+                GPIO.output(READY_LED, GPIO.HIGH)
+                state = 0
 
 if __name__ == "__main__":
     main()

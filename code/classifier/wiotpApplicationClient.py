@@ -7,15 +7,14 @@ class ApplicationClient:
     def __init__(self):
         f = open('../../properties.json')
         properties = json.load(f)
-        self.typeId = properties['DEVICE_TYPE']
-        self.deviceId = properties['DEVICE_ID']
+        self.typeId = properties['MONITOR']['DEVICE_TYPE']
+        self.deviceId = properties['MONITOR']['DEVICE_ID']
         options = wiotp.sdk.application.parseConfigFile("application.yaml")
         self.client = wiotp.sdk.application.ApplicationClient(config=options)
         self.client.connect()
         self.client.deviceEventCallback = self.onMessage
 
     def sendCommand(self, commandId, data):
-        # TODO: Not working have to fix
         self.client.publishCommand(self.typeId, self.deviceId, commandId, "json", data)
         print('Published data')
 

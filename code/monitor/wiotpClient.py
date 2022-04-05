@@ -8,8 +8,8 @@ class DeviceClient:
     def __init__(self):
         f = open('../../properties.json')
         properties = json.load(f)
-        self.typeId = properties['DOOR']['DEVICE_TYPE']
-        self.deviceId = properties['DOOR']['DEVICE_ID']
+        self.typeId = properties['MONITOR']['DEVICE_TYPE']
+        self.deviceId = properties['MONITOR']['DEVICE_ID']
         options = wiotp.sdk.device.parseConfigFile("device.yaml")
         self.client = wiotp.sdk.device.DeviceClient(config=options)
         self.client.commandCallback = self.commandCallback

@@ -47,11 +47,11 @@ class ClassifierAppClient(ApplicationClient):
             print(event.eventId, event.data)
             status = predict(self.model, event.data["gx"])
             # Process data and send decision
-            status = 'open'
+            # status = 'open'
             data = {"status": status}
             self.sendCommand('doorCommand', data)
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     try:
         client = ClassifierAppClient()
         client.client.subscribeToDeviceEvents(eventId="imu")

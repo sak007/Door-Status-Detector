@@ -44,10 +44,12 @@ class ClassifierAppClient(ApplicationClient):
         self.model = initModel(MODEL_PATH)
     def onMessage(self, event):
         if event.eventId == 'imu':
-            print(event.eventId, event.data)
+            #print(event.eventId, event.data)
             status = predict(self.model, event.data["gx"])
             # Process data and send decision
             # status = 'open'
+            print("Event Id: ", event.eventId)
+            print("PREDICTION: ", status)
             data = {"status": status}
             self.sendCommand('doorCommand', data)
 

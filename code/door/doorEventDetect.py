@@ -8,7 +8,7 @@ import MPU6050EventBuffer
 from wiotpClient import DeviceClient
 
 # LED to indicate when looking for motion
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import RPi.GPIO as GPIO
 READY_LED = 33
 GPIO.setmode(GPIO.BOARD)
@@ -92,8 +92,8 @@ def main():
     plot = False # Set true to enable debug plot
     f = open('../../properties.json')
     properties = json.load(f)
-    DOOR_MODE = properties['DOOR_MODE']
-    DOOR_TRAIN_FOLDER = properties['DOOR_TRAIN_FOLDER']
+    DOOR_MODE = properties['DOOR']['DOOR_MODE']
+    DOOR_TRAIN_FOLDER = properties['DOOR']['DOOR_TRAIN_FOLDER']
 
     # Sensor Settings
     sampleRate = 100
@@ -114,7 +114,7 @@ def main():
     if DOOR_MODE != "train":
         client = DeviceClient()
         print("Event monitoring ready, capturing events for classification.")
-    else: 
+    else:
         print("Event monitoring ready, capturing events for training.")
     GPIO.output(READY_LED, GPIO.HIGH)
     state = 0
@@ -137,10 +137,11 @@ def main():
             if DOOR_MODE == "train":
                 addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange)
                 if plot:
-                    plt.plot(list(range(0,numPoints)), data["gx"])
-                    plt.axvline(x=motionStartPoint, color = "k")
-                    plt.axvline(x=motionEndPoint, color = "k")
-                    plt.show()
+                    pass
+                    # plt.plot(list(range(0,numPoints)), data["gx"])
+                    # plt.axvline(x=motionStartPoint, color = "k")
+                    # plt.axvline(x=motionEndPoint, color = "k")
+                    # plt.show()
             else:
                 for e in data.keys():
                     data[e] = data[e][motionStartPoint:motionEndPoint]

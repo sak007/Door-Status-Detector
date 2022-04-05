@@ -23,7 +23,7 @@ class DeviceClient:
 
     def commandCallback(self, data):
         print("Command callback")
-        print(data)
+        print(data.data)
 
 if __name__ == "__main__":
     try:

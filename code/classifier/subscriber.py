@@ -6,6 +6,35 @@ import copy
 MaxSamples = 600 # Num Gx Samples for Model
 MODEL_PATH = "myModel"
 
+# Create a list of n lists
+def nList(n):
+    myList = []
+    for i in range(n):
+        myList.append([])
+    return myList
+
+# Down sample a list of data into factor lists
+def downsample(data, factor):
+    downData = nList(factor)
+    nValsPerSplit = int(len(data) / factor)
+    for i in range(nValsPerSplit):
+        for j in range(factor):
+            index = i * factor + j
+            downData[j].append(data[index])
+    return downData
+
+def downsampleToNPoints(data, n):
+    if len(data) > n:     
+        factor = 2
+        while True:
+            dVals = downsample(data,factor)[0]
+            if len(dVals) < MaxSamples:
+                break
+            else:
+                factor += 1
+        return dVals, factor
+    return data, 1
+
 def normalize(data):
     mean = np.mean(data)
     sd = np.std(data)
@@ -22,6 +51,7 @@ def fill(data, n, val=0):
 
 # Normalizes data and puts it into the correct shape for the model
 def preprocessData(data):
+    data, _ = downsampleToNPoints(data, MaxSamples)
     data = normalize(data)
     data = fill(data, MaxSamples)
     return np.dstack([data])

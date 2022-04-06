@@ -3,7 +3,7 @@
     "DEVICE_TYPE": "RaspberryPi",
     "DEVICE_ID": "door-pi",
     "DOOR_MODE": "capture",
-    "DOOR_TRAIN_FOLDER": "data/jppahl"
+    "DOOR_TRAIN_FOLDER": "data/jppahl/"
   },
   "MONITOR": {
     "DEVICE_TYPE": "RaspberryPi",

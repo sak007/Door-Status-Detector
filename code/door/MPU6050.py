@@ -23,7 +23,7 @@ class MPU6050:
         # Sample Rate Divider Register - divides the base sample rate 8000Hz so that the given
         # sampleRate is achieved, 
         assert sampleRate <= 1000
-        sampleRateDivier = (8000 / sampleRate) - 1
+        self.sampleRateDivier = (8000 / sampleRate) - 1
         #print("divider:", sampleRateDivier)
         self.accXOffset = 0
         self.accYOffset = 0
@@ -31,8 +31,17 @@ class MPU6050:
         self.gyroXOffset = 0
         self.gyroYOffset = 0
         self.gyroZOffset = 0
+        self.IMUConfigAttempts = 0
         self.sampleRate = sampleRate
-        self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(sampleRateDivier))
+        assert gRange in GConfigVal
+        self.gRange = gRange
+        assert aRange in AConfigVal
+        self.aRange = aRange
+        self.configIMU()
+
+    def configIMU(self):
+        self.IMUConfigAttempts += 1
+        self.bus.write_byte_data(MPU6050_ADDR, SMPLRT_DIV, int(self.sampleRateDivier))
         time.sleep(0.1)
         # Power Management/Crystal Register
         time.sleep(0.1)
@@ -44,15 +53,11 @@ class MPU6050:
         self.bus.write_byte_data(MPU6050_ADDR, CONFIG, 0)
         time.sleep(0.1)
         # Gyro Full Range Config Register
-        assert gRange in GConfigVal
-        self.gRange = gRange
-        gSel = GConfigSel[GConfigVal.index(gRange)]
+        gSel = GConfigSel[GConfigVal.index(self.gRange)]
         self.bus.write_byte_data(MPU6050_ADDR, GYRO_CONFIG, gSel)
         time.sleep(.1)
         # Accelerometer Full Range Config Register
-        assert aRange in AConfigVal
-        self.aRange = aRange
-        aSel = int(AConfigSel[AConfigVal.index(aRange)])
+        aSel = int(AConfigSel[AConfigVal.index(self.aRange)])
         self.bus.write_byte_data(MPU6050_ADDR, ACCEL_CONFIG, aSel)
         time.sleep(.1)
         # Enable FIFO Buffer Signal Saving, bits correspond to signals
@@ -150,8 +155,12 @@ class MPU6050:
     def isDataAvailable(self):
         bufferlen = self.readBufferLen()
         if bufferlen == 1024:
-            print("MPU06050 FIFO Buffer overflow. Clearing buffer data may have been lost.")
-            self.clearBuffer()
+            if self.IMUConfigAttempts < 3:
+                print("MPU06050 FIFO Buffer overflow. This can happen the first time the RPi is powered on, attempting to reconfigure IMU...")
+                self.configIMU()
+                print("Reconfigure Complete.")
+            else:
+                raise Exception("MPU06050 FIFO Buffer overflow and reconfigure attempts have failed to address the issue. Most likely, the process 'Boosting Raspberry Pi I2c speed' has not been completed. See README.md for details on how to complete this.")            
             return False
         elif bufferlen < 24: # Not ready
             return False

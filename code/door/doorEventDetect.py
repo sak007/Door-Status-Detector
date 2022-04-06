@@ -11,6 +11,7 @@ from wiotpClient import DeviceClient
 # import matplotlib.pyplot as plt
 import RPi.GPIO as GPIO
 READY_LED = 33
+GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(READY_LED, GPIO.OUT)
 
@@ -29,7 +30,7 @@ counter = [0,0]
 def getStartingId(folder):
     myid = 0
     hFile = "N/A"
-    files = os.listdir(MyFolder)
+    files = os.listdir(folder)
     if len(files) > 0:
         for file in files: # Check filenames
             sections = file[:-4].split("_") # Cut off last 4 chars corresponding to .csv and split by _
@@ -38,7 +39,7 @@ def getStartingId(folder):
                 myid = int(sections[-1])
     return myid
 
-def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange):
+def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange, folder):
     global counter
     avgGx = sum(data[channels[3]])/len(data[channels[3]])
     maxGx = max(data[channels[3]])
@@ -70,10 +71,10 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
     print("CLOSES: " + str(counter[1]))
 
 
-    myid = getStartingId(MyFolder) + 1
+    myid = getStartingId(folder) + 1
     filename = "data_" + myclass + "_" + str(myid) + ".csv"
     data2 = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
-    with open(MyFolder + filename, "w") as f:
+    with open(folder + filename, "w") as f:
         f.write("info,\n")
         f.write("sampleRate, " + str(sampleRate) + ",\n")
         f.write("aRange, " + str(aRange) + ",\n")
@@ -118,6 +119,7 @@ def main():
         print("Event monitoring ready, capturing events for training.")
     GPIO.output(READY_LED, GPIO.HIGH)
     state = 0
+
     while True:
         if eventBuffer.checkForEvent() == True:
             data = {"ax":[],"ay":[],"az":[],"gx":[],"gy":[],"gz":[]}
@@ -135,7 +137,7 @@ def main():
             motionEndPoint = eventBuffer.getEventEndPoint()
 
             if DOOR_MODE == "train":
-                addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange)
+                addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange, "../../"+DOOR_TRAIN_FOLDER)
                 if plot:
                     pass
                     # plt.plot(list(range(0,numPoints)), data["gx"])

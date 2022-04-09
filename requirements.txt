@@ -1,1 +1,5 @@
 wiotp-sdk
+tensorflow
+matplotlib
+pandas
+numpy

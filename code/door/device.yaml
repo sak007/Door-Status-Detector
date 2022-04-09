@@ -1,6 +1,6 @@
 identity:
-    orgId: 9jw3q8
-    typeId: RaspberryPi
-    deviceId: door-pi
+    orgId:
+    typeId:
+    deviceId:
 auth:
-    token: door-pi1
+    token:

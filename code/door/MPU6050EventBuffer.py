@@ -179,9 +179,11 @@ class MPU6050EventBuffer(Thread):
 
         self.runningB = False
 
+    # Helper function stating if the auto calibration is complete
     def isCalibratedFlag(self):
         return self.autoCalComplete
 
+    # Adds latest IMU data to the steady state buffer and removes the oldest data when necessary
     def updateSteadyStateBuffer(self,data):
         self.steadyStateCheckGxBuffer.append(data[3])
         self.steadyStateCheckBuffer.append(data)
@@ -190,6 +192,7 @@ class MPU6050EventBuffer(Thread):
             self.steadyStateCheckGxBuffer.popleft()
             self.steadyStateCheckBuffer.popleft()
 
+    # Helper function stating if the steady state buffer has enough data to make a decision
     def isSteadyStateBufferReady(self):
         buffReadyFlag = False
         if len(self.steadyStateCheckGxBuffer) >= self.steadySteateCheckCount:       
@@ -204,14 +207,17 @@ class MPU6050EventBuffer(Thread):
                 isSteadyFlag = True
         return isSteadyFlag
 
+    # Helper function stating if a motion event has been captured
     def checkForEvent(self):
         return self.eventCaptured
 
+    # Returns the index to the start of motion event in the event buffer
     def getEventStartPoint(self):
         if self.checkForEvent():
             return self.eventStartPoint
         return -1
 
+    # Returns the index to the end of motion event in the event buffer
     def getEventEndPoint(self):
         if self.checkForEvent():
             return self.eventEndPoint
@@ -232,6 +238,7 @@ class MPU6050EventBuffer(Thread):
         self.eventEndPoint = -1        
         self.eventEndOfCaptureCount = 0
 
+    # Clears the captured events and allows capturing of another event
     def clearEvent(self):
         self.eventCaptured = False
         self.eventBuffer.clear()

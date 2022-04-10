@@ -2,28 +2,19 @@ import os
 import time
 import math
 import json
-
 import MPU6050
 import MPU6050EventBuffer
 from wiotpClient import DeviceClient
+import RPi.GPIO as GPIO
+# import matplotlib.pyplot as plt
 
 # LED to indicate when looking for motion
-# import matplotlib.pyplot as plt
-import RPi.GPIO as GPIO
 READY_LED = 33
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(READY_LED, GPIO.OUT)
-
-
-#from Button import Button
-
-#from IOConfig import *
-
-BATime = 1 # Amount of time to record data before and after open/close
-
-MyFolder = "../../data/radek2/"
 counter = [0,0]
+
 # Looks at the filenames in a given directory to see if they match the formart
 # data_#_#.csv to try to get the second #, which we consider to be the file id
 # to get the next available id for the next file
@@ -39,6 +30,8 @@ def getStartingId(folder):
                 myid = int(sections[-1])
     return myid
 
+# Capture the motion event, classify it based on a heuristic and write to a file to 
+# use when training the classifier 
 def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange, folder):
     global counter
     avgGx = sum(data[channels[3]])/len(data[channels[3]])
@@ -49,12 +42,8 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
 
     # Trying to auto classify the events for training purposes.
     # If the average Gx in the of the events is positive (above
-    # a threshold) and we don't see a 'large' negative Gx data
-    # point then assume it was an open event, the same logic
-    # in reverse is a close event. The reason we are looking for
-    # a large data point in the opposite direction of the
-    # average is to try an avoid classifying an open and close
-    # event as either simply and open or a close.
+    # a threshold) then assume it was an open event, the same logic
+    # in reverse is a close event. 
     if avgGx > 5:
         counter[0]+=1
         myclass = "o" # Open event
@@ -64,12 +53,12 @@ def addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleR
         myclass = "c" # Close event
         print("DOOR CLOSING")
     else:
-        print("WTF")
+        print("UNKNOWN")
         # Do not raise and exception unless you want to be alerted when you are getting unclassified data
         raise Exception("WTF")
+
     print("OPENS: " + str(counter[0]))
     print("CLOSES: " + str(counter[1]))
-
 
     myid = getStartingId(folder) + 1
     filename = "data_" + myclass + "_" + str(myid) + ".csv"
@@ -100,8 +89,10 @@ def main():
     sampleRate = 100
     aRange = 2
     gRange = 250
+
     # Expected sample rate based on our settings
     expectedSampleRate = MPU6050.expectedSampleRate(sampleRate)
+    
     # Initilaize the sensor and buffer
     sensor = MPU6050.MPU6050(sampleRate=sampleRate, aRange=aRange, gRange=gRange)
     eventBuffer = MPU6050EventBuffer.MPU6050EventBuffer(1.5,2,10,0.200,0.500,sensor)
@@ -133,10 +124,12 @@ def main():
                 for j, val in enumerate(chunk): # For each channel
                     data[channels[j]].append(val)
 
+            # Retrieve offset into event buffer for the motion start and stop indices
             motionStartPoint = eventBuffer.getEventStartPoint()
             motionEndPoint = eventBuffer.getEventEndPoint()
 
             if DOOR_MODE == "train":
+                # If in training mode, write the event to a file
                 addTrainingDataset(data, channels, motionStartPoint, motionEndPoint, sampleRate, aRange, gRange, "../../"+DOOR_TRAIN_FOLDER)
                 if plot:
                     pass
@@ -145,6 +138,7 @@ def main():
                     # plt.axvline(x=motionEndPoint, color = "k")
                     # plt.show()
             else:
+                # Otherwise, publish the event to the cloud for classification
                 for e in data.keys():
                     data[e] = data[e][motionStartPoint:motionEndPoint]
                 client.publish('imu', data)

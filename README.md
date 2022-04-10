@@ -12,9 +12,14 @@ https://www.raspberrypi-spy.co.uk/2018/02/change-raspberry-pi-i2c-bus-speed/
 
 # Machine Learning Code
 Found in code/ML
+
 Data2.ipynb - Python notebook for processing the training data for the machine learning model
+
 Model2.ipynb - Python notebook for creating the machine learning model, after training is complete, a folder called models is created, containing the checkpoint model for each epoch, the best epoch is selected and copy and pasted to code/ML/myModel, renaming the checkpoint folder name to myModel, additionally, it is to be copied to /code/classifier/myModel
+
 myModel directory - the saved machine learning model
+
 predict.py - python script to load the machine learning model and make predictions on data
+
 pretty.py - used to generate confusion matrix for model training
 

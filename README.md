@@ -51,11 +51,13 @@ This device receives information from the classifier and displays the state of t
 ## Raspberry Pi in the door
   - Enable I2C in the RaspberryPi.
   - Set I2C speed to 400KHz ([Click here for instructions](https://www.raspberrypi-spy.co.uk/2018/02/change-raspberry-pi-i2c-bus-speed/))
+  - update device info in ```properties.json```
   - run ```pip3 install -r requirements.txt``` from the project root directory.
   - Update orgId, typeId, deviceId and token in ```device.yaml``` inside **code/door** directory.
   - run ```python doorEventDetect.py``` from **code/door** directory.
 
 ## Monitor
+  - update device info in ```properties.json```
   - run ```pip3 install -r requirements.txt``` from the project root directory.
   - Update orgId, typeId, deviceId and token in ```device.yaml``` inside **code/monitor** directory.
   - run ```python3 wiotpClient.py``` from **code/monitor** for displaying the door status in the terminal.

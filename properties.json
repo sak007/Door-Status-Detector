@@ -1,12 +1,12 @@
 {
   "DOOR": {
-    "DEVICE_TYPE": "RaspberryPi",
-    "DEVICE_ID": "door-pi",
+    "DEVICE_TYPE": "",
+    "DEVICE_ID": "",
     "DOOR_MODE": "capture",
-    "DOOR_TRAIN_FOLDER": "data/jppahl/"
+    "DOOR_TRAIN_FOLDER": ""
   },
   "MONITOR": {
-    "DEVICE_TYPE": "RaspberryPi",
-    "DEVICE_ID": "monitor-pi"
+    "DEVICE_TYPE": "",
+    "DEVICE_ID": ""
   }
 }

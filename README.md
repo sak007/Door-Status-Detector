@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![version](https://img.shields.io/badge/version-3.0-blue)](https://github.com/sak007/Door-Status-Detector/releases/tag/v3.0)
-[![DOI]()]
+[![DOI](https://zenodo.org/badge/469118048.svg)](https://zenodo.org/badge/latestdoi/469118048)
 [![GitHub issues](https://img.shields.io/github/issues/sak007/Door-Status-Detector)](https://github.com/sak007/Door-Status-Detector/issues?q=is%3Aopen+is%3Aissue)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/sak007/Door-Status-Detector)](https://github.com/sak007/Door-Status-Detector/issues?q=is%3Aissue+is%3Aclosed)
 [![Github pull requests](https://img.shields.io/github/issues-pr/sak007/Door-Status-Detector)](https://github.com/sak007/Door-Status-Detector/pulls)
